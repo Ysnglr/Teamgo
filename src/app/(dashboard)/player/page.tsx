@@ -12,8 +12,8 @@ import { Clock, MapPin } from "lucide-react";
 function LiveWidget({ event }: { event: EventWithRelations | null }) {
   if (!event) return null;
   const isLive = event.end_time
-    ? new Date() >= event.start_time && new Date() <= new Date(event.end_time)
-    : new Date() >= event.start_time;
+    ? new Date() >= new Date(event.start_time) && new Date() <= new Date(event.end_time)
+    : new Date() >= new Date(event.start_time);
 
   return (
     <Card className={`border-2 ${isLive ? "border-red-300 bg-red-50/30" : "border-orange-200 bg-orange-50/30"}`}>
@@ -24,7 +24,7 @@ function LiveWidget({ event }: { event: EventWithRelations | null }) {
           ) : (
             <Badge variant="warning">Sıradaki</Badge>
           )}
-          <span className="text-sm font-medium text-gray-600">{event.team.name}</span>
+          <span className="text-sm font-medium text-gray-600">{event.Team?.name}</span>
         </div>
         <h2 className="text-lg font-bold text-gray-900 mb-1">
           {event.title}
@@ -40,8 +40,8 @@ function LiveWidget({ event }: { event: EventWithRelations | null }) {
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-gray-400" />
-            <span>{event.location.name}</span>
-            {event.location.address && <span className="text-gray-400">· {event.location.address}</span>}
+            <span>{event.Location?.name}</span>
+            {event.Location?.address && <span className="text-gray-400">· {event.Location.address}</span>}
           </div>
         </div>
       </CardContent>
@@ -73,7 +73,7 @@ export default function PlayerPage() {
 
   function filterByType(type: string) {
     if (type === "all") return events;
-    return events.filter((e) => e.event_type.name === type);
+    return events.filter((e) => e.EventType?.name === type);
   }
 
   if (loading) {
@@ -113,7 +113,7 @@ export default function PlayerPage() {
           <TabsContent value="diger">
             <EventList
               events={events.filter(
-                (e) => e.event_type.name !== "Maç" && e.event_type.name !== "Antrenman"
+                (e) => e.EventType?.name !== "Maç" && e.EventType?.name !== "Antrenman"
               )}
             />
           </TabsContent>

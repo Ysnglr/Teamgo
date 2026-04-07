@@ -12,14 +12,13 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 
 type Team = { id: string; name: string };
 type Role = { id: string; name: string };
-type UserTeam = { team: Team; role?: Role };
 type User = {
   id: string;
   email: string;
   full_name: string;
   user_type: "PLAYER" | "STAFF" | "ADMIN";
-  staff_teams: { team: Team; role: Role }[];
-  player_teams: { team: Team }[];
+  TeamStaffMember: { Team: Team; Role: Role }[];
+  TeamPlayerMember: { Team: Team }[];
 };
 
 const userTypeBadge = {
@@ -68,8 +67,8 @@ export default function UsersPage() {
 
   function openEdit(user: User) {
     setEditUser(user);
-    const team = user.staff_teams[0]?.team ?? user.player_teams[0]?.team;
-    const role = user.staff_teams[0]?.role;
+    const team = user.TeamStaffMember[0]?.Team ?? user.TeamPlayerMember[0]?.Team;
+    const role = user.TeamStaffMember[0]?.Role;
     setForm({
       email: user.email,
       full_name: user.full_name,
@@ -147,8 +146,8 @@ export default function UsersPage() {
             <tbody className="divide-y divide-gray-50">
               {users.map((u) => {
                 const teamNames = u.user_type === "STAFF"
-                  ? u.staff_teams.map((t) => `${t.team.name} (${t.role.name})`).join(", ")
-                  : u.player_teams.map((t) => t.team.name).join(", ");
+                  ? u.TeamStaffMember.map((t) => `${t.Team.name} (${t.Role.name})`).join(", ")
+                  : u.TeamPlayerMember.map((t) => t.Team.name).join(", ");
                 return (
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{u.full_name}</td>

@@ -1,11 +1,21 @@
-import { prisma } from "@/lib/prisma";
-import { eventSelect } from "@/lib/events";
+import { createClient } from "@/lib/supabase/server";
+import { EVENT_SELECT } from "@/lib/events";
 import { EventForm } from "@/components/events/event-form";
 import { notFound } from "next/navigation";
 
-export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditEventPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
-  const event = await prisma.event.findUnique({ where: { id }, select: eventSelect });
+  const supabase = await createClient();
+
+  const { data: event } = await supabase
+    .from("Event")
+    .select(EVENT_SELECT)
+    .eq("id", id)
+    .single();
 
   if (!event) notFound();
 

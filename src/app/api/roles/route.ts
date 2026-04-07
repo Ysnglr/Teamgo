@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -10,19 +9,27 @@ const roleSchema = z.object({
 
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const roles = await prisma.role.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(roles);
+  const { data: roles } = await supabase.from("Role").select("*").order("name", { ascending: true });
+  return NextResponse.json(roles ?? []);
 }
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
+  const { data: dbUser } = await supabase
+    .from("User")
+    .select("user_type")
+    .eq("email", user.email!)
+    .single();
   if (!dbUser || dbUser.user_type !== "ADMIN") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -30,6 +37,6 @@ export async function POST(request: Request) {
   const parsed = roleSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const role = await prisma.role.create({ data: parsed.data });
+  const { data: role } = await supabase.from("Role").insert(parsed.data).select().single();
   return NextResponse.json(role, { status: 201 });
 }

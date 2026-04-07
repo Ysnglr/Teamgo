@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -10,24 +9,41 @@ const locationSchema = z.object({
 
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const locations = await prisma.location.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(locations);
+  const { data: locations } = await supabase
+    .from("Location")
+    .select("*")
+    .order("name", { ascending: true });
+  return NextResponse.json(locations ?? []);
 }
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
-  if (!dbUser || dbUser.user_type !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { data: dbUser } = await supabase
+    .from("User")
+    .select("user_type")
+    .eq("email", user.email!)
+    .single();
+  if (!dbUser || dbUser.user_type !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   const parsed = locationSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const location = await prisma.location.create({ data: parsed.data });
+  const { data: location } = await supabase
+    .from("Location")
+    .insert(parsed.data)
+    .select()
+    .single();
   return NextResponse.json(location, { status: 201 });
 }

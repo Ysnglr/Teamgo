@@ -67,11 +67,11 @@ export default function AdminEventsPage() {
                 <tr key={e.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{e.title}</div>
-                    <div className="text-xs text-gray-400">{e.event_type.name}{e.event_subtype ? ` · ${e.event_subtype.name}` : ""}</div>
+                    <div className="text-xs text-gray-400">{e.EventType?.name}{e.EventSubtype ? ` · ${e.EventSubtype.name}` : ""}</div>
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{e.team.name}</td>
+                  <td className="px-4 py-3 text-gray-700">{e.Team?.name}</td>
                   <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{formatDateTime(e.start_time)}</td>
-                  <td className="px-4 py-3 text-gray-700">{e.location.name}</td>
+                  <td className="px-4 py-3 text-gray-700">{e.Location?.name}</td>
                   <td className="px-4 py-3">{statusBadge[e.status]}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">

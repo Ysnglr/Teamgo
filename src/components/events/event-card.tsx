@@ -24,8 +24,9 @@ const typeTextColor: Record<string, string> = {
 
 export function EventCard({ event, actions, compact = false }: EventCardProps) {
   const state = getEventState(event);
-  const cardClass = typeColor[event.event_type.name] ?? "bg-gray-50 border-gray-200";
-  const textClass = typeTextColor[event.event_type.name] ?? "text-gray-600";
+  const eventTypeName = event.EventType?.name ?? "";
+  const cardClass = typeColor[eventTypeName] ?? "bg-gray-50 border-gray-200";
+  const textClass = typeTextColor[eventTypeName] ?? "text-gray-600";
 
   return (
     <Card className={`border ${cardClass}`}>
@@ -35,8 +36,8 @@ export function EventCard({ event, actions, compact = false }: EventCardProps) {
             {/* Type + subtype + team */}
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className={`text-xs font-semibold ${textClass}`}>
-                {event.event_type.name}
-                {event.event_subtype ? ` · ${event.event_subtype.name}` : ""}
+                {eventTypeName}
+                {event.EventSubtype ? ` · ${event.EventSubtype.name}` : ""}
               </span>
               {state === "live" && <Badge variant="live">CANLI</Badge>}
               {state === "approaching" && <Badge variant="warning">Toplanma Zamanı</Badge>}
@@ -61,13 +62,15 @@ export function EventCard({ event, actions, compact = false }: EventCardProps) {
               </div>
               <div className="flex items-center gap-1.5 text-xs text-gray-500">
                 <MapPin className="h-3 w-3 flex-shrink-0" />
-                <span>{event.location.name}</span>
+                <span>{event.Location?.name}</span>
               </div>
-              {!compact && event.staff_assignments.length > 0 && (
+              {!compact && event.EventStaffAssignment.length > 0 && (
                 <div className="flex items-start gap-1.5 text-xs text-gray-500">
                   <Users className="h-3 w-3 flex-shrink-0 mt-0.5" />
                   <span>
-                    {event.staff_assignments.map((a) => `${a.role.name}: ${a.user.full_name}`).join(", ")}
+                    {event.EventStaffAssignment.map(
+                      (a) => `${a.Role?.name}: ${a.User?.full_name}`
+                    ).join(", ")}
                   </span>
                 </div>
               )}

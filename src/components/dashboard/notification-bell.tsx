@@ -84,10 +84,10 @@ export function NotificationBell({ userId }: { userId: string }) {
                     }`}
                   >
                     <p className="text-sm font-medium text-gray-900">
-                      {n.event.title}
+                      {n.Event?.title}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {changeTypeLabel[n.change_type] ?? n.change_type} · {n.event.team.name}
+                      {changeTypeLabel[n.change_type] ?? n.change_type} · {n.Event?.Team?.name}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                       {formatDateTime(n.sent_at)}

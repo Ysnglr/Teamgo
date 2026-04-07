@@ -1,19 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
 
-  const dbUser = await prisma.user.findUnique({
-    where: { email: user.email! },
-    select: { id: true, full_name: true, user_type: true },
-  });
+  const { data: dbUser } = await supabase
+    .from("User")
+    .select("id, full_name, user_type")
+    .eq("email", user.email!)
+    .single();
 
   if (!dbUser) redirect("/login");
 
@@ -26,9 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <NotificationBell userId={dbUser.id} />
         </header>
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ type EventType = { id: string; name: string; subtypes: { id: string; name: strin
 type Team = { id: string; name: string };
 type Location = { id: string; name: string };
 type Role = { id: string; name: string };
-type StaffUser = { id: string; full_name: string; staff_teams: { role: Role; team: { id: string } }[] };
+type StaffUser = { id: string; full_name: string; TeamStaffMember: { Role: Role; Team: { id: string } }[] };
 
 type EventFormProps = {
   event?: EventWithRelations;
@@ -45,11 +45,11 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
   });
 
   const [staffAssignments, setStaffAssignments] = useState<{ user_id: string; role_id: string; user_name: string; role_name: string }[]>(
-    event?.staff_assignments.map((a) => ({
+    event?.EventStaffAssignment.map((a) => ({
       user_id: a.user_id,
       role_id: a.role_id,
-      user_name: a.user.full_name,
-      role_name: a.role.name,
+      user_name: a.User?.full_name ?? "",
+      role_name: a.Role?.name ?? "",
     })) ?? []
   );
   const [newStaff, setNewStaff] = useState({ user_id: "", role_id: "" });
@@ -99,7 +99,7 @@ export function EventForm({ event, onSuccess }: EventFormProps) {
   }
 
   function addFrequentStaff(user: StaffUser) {
-    const defaultRole = user.staff_teams[0]?.role;
+    const defaultRole = user.TeamStaffMember[0]?.Role;
     if (!defaultRole) return;
     if (staffAssignments.find((a) => a.user_id === user.id)) return;
     setStaffAssignments([...staffAssignments, {

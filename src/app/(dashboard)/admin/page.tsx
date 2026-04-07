@@ -1,39 +1,40 @@
-import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
+import { Card, CardContent } from "@/components/ui/card";
 import { Trophy, Users, Calendar, MapPin } from "lucide-react";
 import { formatDateTime, getEventState } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 export default async function AdminPage() {
-  const [teams, users, locations, activeEvents] = await Promise.all([
-    prisma.team.count(),
-    prisma.user.count(),
-    prisma.location.count(),
-    prisma.event.findMany({
-      where: {
-        status: "PUBLISHED",
-        OR: [
-          { end_time: null, start_time: { lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) } },
-          { end_time: { gte: new Date() } },
-        ],
-      },
-      orderBy: { start_time: "asc" },
-      include: {
-        team: true,
-        location: true,
-        event_type: true,
-        staff_assignments: {
-          include: { user: { select: { full_name: true } }, role: { select: { name: true } } },
-        },
-      },
-    }),
+  const supabase = await createClient();
+
+  const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const now = new Date().toISOString();
+
+  const [
+    { count: teamCount },
+    { count: userCount },
+    { count: locationCount },
+    { data: activeEvents },
+  ] = await Promise.all([
+    supabase.from("Team").select("*", { count: "exact", head: true }),
+    supabase.from("User").select("*", { count: "exact", head: true }),
+    supabase.from("Location").select("*", { count: "exact", head: true }),
+    supabase
+      .from("Event")
+      .select(
+        "id, title, start_time, end_time, arrival_time, Team(name), Location(name), EventType(name), EventStaffAssignment(User(full_name), Role(name))"
+      )
+      .eq("status", "PUBLISHED")
+      .or(`end_time.is.null,end_time.gte.${now}`)
+      .lte("start_time", oneWeekFromNow)
+      .order("start_time", { ascending: true }),
   ]);
 
   const stats = [
-    { label: "Takımlar", value: teams, icon: Trophy, color: "text-orange-500" },
-    { label: "Kullanıcılar", value: users, icon: Users, color: "text-blue-500" },
-    { label: "Aktif Eventler", value: activeEvents.length, icon: Calendar, color: "text-green-500" },
-    { label: "Lokasyonlar", value: locations, icon: MapPin, color: "text-purple-500" },
+    { label: "Takımlar", value: teamCount ?? 0, icon: Trophy, color: "text-orange-500" },
+    { label: "Kullanıcılar", value: userCount ?? 0, icon: Users, color: "text-blue-500" },
+    { label: "Aktif Eventler", value: activeEvents?.length ?? 0, icon: Calendar, color: "text-green-500" },
+    { label: "Lokasyonlar", value: locationCount ?? 0, icon: MapPin, color: "text-purple-500" },
   ];
 
   return (
@@ -66,7 +67,7 @@ export default async function AdminPage() {
       {/* Active events operation center */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Aktif & Yaklaşan Eventler</h2>
-        {activeEvents.length === 0 ? (
+        {!activeEvents || activeEvents.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-gray-400 text-sm">
               Aktif event yok
@@ -83,29 +84,41 @@ export default async function AdminPage() {
                 expired: <Badge variant="outline">Bitti</Badge>,
               }[state];
 
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const team = event.Team as any;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const location = event.Location as any;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const eventType = event.EventType as any;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const staffAssignments = (event.EventStaffAssignment ?? []) as any[];
+
               return (
-                <Card key={event.id} className={state === "live" ? "border-red-200 bg-red-50/30" : ""}>
+                <Card
+                  key={event.id}
+                  className={state === "live" ? "border-red-200 bg-red-50/30" : ""}
+                >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {stateBadge}
-                          <span className="font-semibold text-gray-900">{event.team.name}</span>
+                          <span className="font-semibold text-gray-900">{team?.name}</span>
                           <span className="text-gray-400">·</span>
-                          <span className="text-orange-600 font-medium">{event.event_type.name}</span>
+                          <span className="text-orange-600 font-medium">{eventType?.name}</span>
                           <span className="text-gray-400">·</span>
                           <span className="text-gray-700">{event.title}</span>
                         </div>
                         <div className="flex items-center gap-3 mt-1.5 text-sm text-gray-500">
                           <span>{formatDateTime(event.start_time)}</span>
                           <span>·</span>
-                          <span>{event.location.name}</span>
-                          {event.staff_assignments.length > 0 && (
+                          <span>{location?.name}</span>
+                          {staffAssignments.length > 0 && (
                             <>
                               <span>·</span>
                               <span>
-                                {event.staff_assignments
-                                  .map((a) => `${a.role.name}: ${a.user.full_name}`)
+                                {staffAssignments
+                                  .map((a) => `${a.Role?.name}: ${a.User?.full_name}`)
                                   .join(", ")}
                               </span>
                             </>

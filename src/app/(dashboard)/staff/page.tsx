@@ -37,7 +37,7 @@ export default function StaffPage() {
 
   function filterByType(type: string) {
     if (type === "all") return events;
-    return events.filter((e) => e.event_type.name === type);
+    return events.filter((e) => e.EventType?.name === type);
   }
 
   function EventList({ type }: { type: string }) {
@@ -118,7 +118,7 @@ export default function StaffPage() {
             <TabsContent value="diger">
               <div className="space-y-3 mt-2">
                 {events
-                  .filter((e) => e.event_type.name !== "Maç" && e.event_type.name !== "Antrenman")
+                  .filter((e) => e.EventType?.name !== "Maç" && e.EventType?.name !== "Antrenman")
                   .map((event) => (
                     <EventCard key={event.id} event={event} />
                   ))}
