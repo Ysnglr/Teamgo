@@ -11,27 +11,19 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: teams } = await supabase
-    .from("Team")
-    .select("*, TeamPlayerMember(count), TeamStaffMember(count)")
-    .order("name", { ascending: true });
+  const [{ data: teams }, { data: playerMembers }, { data: staffMembers }] = await Promise.all([
+    supabase.from("Team").select("*").order("name", { ascending: true }),
+    supabase.from("TeamPlayerMember").select("team_id"),
+    supabase.from("TeamStaffMember").select("team_id"),
+  ]);
 
-  // Normalize count shape
-  const result = (teams ?? []).map(
-    (t: {
-      TeamPlayerMember: { count: number }[];
-      TeamStaffMember: { count: number }[];
-      [key: string]: unknown;
-    }) => ({
-      ...t,
-      _count: {
-        player_members: t.TeamPlayerMember?.[0]?.count ?? 0,
-        staff_members: t.TeamStaffMember?.[0]?.count ?? 0,
-      },
-      TeamPlayerMember: undefined,
-      TeamStaffMember: undefined,
-    })
-  );
+  const result = (teams ?? []).map((t: { id: string; [key: string]: unknown }) => ({
+    ...t,
+    _count: {
+      player_members: (playerMembers ?? []).filter((m) => m.team_id === t.id).length,
+      staff_members: (staffMembers ?? []).filter((m) => m.team_id === t.id).length,
+    },
+  }));
 
   return NextResponse.json(result);
 }
