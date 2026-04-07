@@ -57,11 +57,16 @@ export async function POST(request: Request) {
   const parsed = teamSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { data: team } = await supabase
+  const { data: team, error: insertError } = await supabase
     .from("Team")
     .insert(parsed.data)
     .select()
     .single();
+
+  if (insertError) {
+    console.error("Team insert error:", insertError);
+    return NextResponse.json({ error: insertError.message, details: insertError }, { status: 500 });
+  }
 
   return NextResponse.json(team, { status: 201 });
 }
