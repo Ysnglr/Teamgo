@@ -11,8 +11,17 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [{ data: teams }, { data: playerMembers }, { data: staffMembers }] = await Promise.all([
-    supabase.from("Team").select("*").order("name", { ascending: true }),
+  const { data: teams, error: teamsError } = await supabase
+    .from("Team")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (teamsError) {
+    console.error("Teams query error:", teamsError);
+    return NextResponse.json({ error: teamsError.message, details: teamsError }, { status: 500 });
+  }
+
+  const [{ data: playerMembers }, { data: staffMembers }] = await Promise.all([
     supabase.from("TeamPlayerMember").select("team_id"),
     supabase.from("TeamStaffMember").select("team_id"),
   ]);
