@@ -32,7 +32,12 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
-  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth")) {
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/join") ||
+    pathname.startsWith("/api/auth")
+  ) {
     if (user) {
       // Already logged in — redirect to dashboard
       return NextResponse.redirect(new URL("/", request.url));
@@ -48,11 +53,21 @@ export async function middleware(request: NextRequest) {
   // Get user type from DB for role-based routing
   const { data: profile } = await supabase
     .from("User")
-    .select("user_type")
+    .select("user_type, onboarding_completed")
     .eq("email", user.email)
     .single();
 
   const userType = profile?.user_type as "ADMIN" | "STAFF" | "PLAYER" | undefined;
+
+  // Redirect non-onboarded admins to onboarding wizard
+  if (
+    userType === "ADMIN" &&
+    !profile?.onboarding_completed &&
+    !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/api/onboarding")
+  ) {
+    return NextResponse.redirect(new URL("/onboarding/sport", request.url));
+  }
 
   // Root redirect based on role
   if (pathname === "/") {

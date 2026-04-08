@@ -2,7 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const eventTypeSchema = z.object({ name: z.string().min(1) });
+const eventTypeSchema = z.object({
+  name: z.string().min(1),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .default("#95a5a6"),
+});
 
 export async function GET() {
   const supabase = await createClient();

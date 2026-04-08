@@ -8,12 +8,25 @@ export type User = {
   user_type: UserType;
   avatar_url: string | null;
   created_at: string;
+  onboarding_completed: boolean;
+  locale: string | null;
+  sport_type: string | null;
+  club_code: string | null;
 };
+
+export type SportType =
+  | "basketball"
+  | "soccer"
+  | "volleyball"
+  | "baseball"
+  | "football"
+  | "other";
 
 export type Role = {
   id: string;
   name: string;
   can_create_event: boolean;
+  can_invite_players: boolean;
 };
 
 export type Team = {
@@ -25,6 +38,7 @@ export type Team = {
 export type EventType = {
   id: string;
   name: string;
+  color: string;
 };
 
 export type EventSubtype = {

@@ -5,6 +5,7 @@ import { z } from "zod";
 const roleSchema = z.object({
   name: z.string().min(1),
   can_create_event: z.boolean().default(false),
+  can_invite_players: z.boolean().default(false),
 });
 
 export async function GET() {
